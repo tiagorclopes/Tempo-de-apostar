@@ -1,0 +1,151 @@
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Tempo de Apostar</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>Tempo de Apostar</h1>
+
+  <label>Nome do jogador</label>
+  <input type="text" id="nomeJogador">
+
+  <label>Data da aposta</label>
+  <input type="date" id="dataAposta">
+
+  <label>Temperatura mínima prevista (°C)</label>
+  <input type="number" id="tempMinPrevista">
+
+  <label>Temperatura máxima prevista (°C)</label>
+  <input type="number" id="tempMaxPrevista">
+
+  <label>Condição prevista</label>
+  <select id="condicaoPrevista">
+    <option>Ensolarado</option>
+    <option>Parcialmente nublado</option>
+    <option>Nublado</option>
+    <option>Chuva leve</option>
+    <option>Chuva forte</option>
+    <option>Tempestade</option>
+  </select>
+
+  <hr>
+
+  <label>Temperatura mínima real (°C)</label>
+  <input type="number" id="tempMinReal">
+
+  <label>Temperatura máxima real (°C)</label>
+  <input type="number" id="tempMaxReal">
+
+  <label>Condição real</label>
+  <select id="condicaoReal">
+    <option>Ensolarado</option>
+    <option>Parcialmente nublado</option>
+    <option>Nublado</option>
+    <option>Chuva leve</option>
+    <option>Chuva forte</option>
+    <option>Tempestade</option>
+  </select>
+
+  <button onclick="calcularPontuacao()">Calcular Pontuação</button>
+  <button id="resetButton" onclick="resetarRanking()">Resetar Ranking</button>
+
+  <div id="resultado"></div>
+
+  <div id="ranking">
+    <h2>Ranking</h2>
+    <table id="rankingTabela">
+      <thead>
+        <tr><th>Jogador</th><th>Pontos</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <script>
+    function calcularPontuacao() {
+      const nome = document.getElementById('nomeJogador').value.trim();
+      const data = document.getElementById('dataAposta').value;
+      if (!nome || !data) {
+        alert("Digite o nome e selecione a data da aposta.");
+        return;
+      }
+
+      const tempMinPrev = parseFloat(document.getElementById('tempMinPrevista').value);
+      const tempMaxPrev = parseFloat(document.getElementById('tempMaxPrevista').value);
+      const condPrev = document.getElementById('condicaoPrevista').value;
+
+      const tempMinReal = parseFloat(document.getElementById('tempMinReal').value);
+      const tempMaxReal = parseFloat(document.getElementById('tempMaxReal').value);
+      const condReal = document.getElementById('condicaoReal').value;
+
+      function pontosTemperatura(prevista, real) {
+        const diff = Math.abs(prevista - real);
+        if (diff === 0) return 10;
+        if (diff <= 1) return 7;
+        if (diff <= 2) return 4;
+        if (diff <= 3) return 2;
+        return 0;
+      }
+
+      function pontosCondicao(prev, real) {
+        if (prev === real) return 8;
+        const vizinhas = {
+          "Ensolarado": ["Parcialmente nublado"],
+          "Parcialmente nublado": ["Ensolarado", "Nublado"],
+          "Nublado": ["Parcialmente nublado", "Chuva leve"],
+          "Chuva leve": ["Nublado", "Chuva forte"],
+          "Chuva forte": ["Chuva leve", "Tempestade"],
+          "Tempestade": ["Chuva forte"]
+        };
+        return vizinhas[prev]?.includes(real) ? 4 : 0;
+      }
+
+      const pontosMin = pontosTemperatura(tempMinPrev, tempMinReal);
+      const pontosMax = pontosTemperatura(tempMaxPrev, tempMaxReal);
+      const pontosCond = pontosCondicao(condPrev, condReal);
+      const total = pontosMin + pontosMax + pontosCond;
+
+      document.getElementById('resultado').innerHTML =
+        `<strong>${nome} (${data}) fez:</strong><br>
+         Temp. mínima: ${pontosMin} pontos<br>
+         Temp. máxima: ${pontosMax} pontos<br>
+         Condição: ${pontosCond} pontos<br><br>
+         <strong>Total:</strong> ${total} pontos`;
+
+      atualizarRanking(nome, total);
+    }
+
+    function atualizarRanking(nome, pontos) {
+      const ranking = JSON.parse(localStorage.getItem('rankingTempo')) || {};
+      ranking[nome] = (ranking[nome] || 0) + pontos;
+      localStorage.setItem('rankingTempo', JSON.stringify(ranking));
+      exibirRanking();
+    }
+
+    function exibirRanking() {
+      const ranking = JSON.parse(localStorage.getItem('rankingTempo')) || {};
+      const tbody = document.querySelector("#rankingTabela tbody");
+      tbody.innerHTML = "";
+
+      const entries = Object.entries(ranking).sort((a, b) => b[1] - a[1]);
+      for (const [jogador, pontos] of entries) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${jogador}</td><td>${pontos}</td>`;
+        tbody.appendChild(tr);
+      }
+    }
+
+    function resetarRanking() {
+      if (confirm("Tem certeza que deseja resetar o ranking?")) {
+        localStorage.removeItem('rankingTempo');
+        exibirRanking();
+      }
+    }
+
+    window.onload = exibirRanking;
+  </script>
+</body>
+</html>
