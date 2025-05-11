@@ -1,0 +1,58 @@
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Administrador - Tempo de Apostar</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>Inserir Dados Reais</h1>
+
+  <label>Data da aposta</label>
+  <input type="date" id="dataAdmin">
+
+  <label>Temperatura mínima real (°C)</label>
+  <input type="number" id="tempMinReal">
+
+  <label>Temperatura máxima real (°C)</label>
+  <input type="number" id="tempMaxReal">
+
+  <label>Condição real</label>
+  <select id="condicaoReal">
+    <option>Ensolarado</option>
+    <option>Parcialmente nublado</option>
+    <option>Nublado</option>
+    <option>Chuva leve</option>
+    <option>Chuva forte</option>
+    <option>Tempestade</option>
+  </select>
+
+  <button onclick="salvarDadosReais()">Salvar dados do dia</button>
+
+  <p id="status"></p>
+
+  <script>
+    function salvarDadosReais() {
+      const data = document.getElementById('dataAdmin').value;
+      const tempMin = document.getElementById('tempMinReal').value;
+      const tempMax = document.getElementById('tempMaxReal').value;
+      const condicao = document.getElementById('condicaoReal').value;
+
+      if (!data || !tempMin || !tempMax || !condicao) {
+        alert("Preencha todos os campos.");
+        return;
+      }
+
+      const dados = {
+        tempMin,
+        tempMax,
+        condicao
+      };
+
+      localStorage.setItem("dadosReais-" + data, JSON.stringify(dados));
+      document.getElementById('status').textContent = "Dados salvos para " + data;
+    }
+  </script>
+</body>
+</html>
