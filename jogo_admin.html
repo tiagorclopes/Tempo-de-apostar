@@ -12,7 +12,7 @@
   <label>Nome do jogador</label>
   <input type="text" id="nomeJogador">
 
-  <label>Data da aposta</label>
+  <label>Previsão para</label>
   <input type="text" id="dataApostaExibida" value="12/05/2025" readonly>
   <input type="hidden" id="dataAposta" value="2025-05-12">
 
@@ -33,6 +33,7 @@
   </select>
 
   <hr>
+  <h2>Resultados</h2>
 
   <label>Temperatura mínima real (°C)</label>
   <input type="number" id="tempMinReal" readonly>
@@ -50,31 +51,23 @@
     <option>Tempestade</option>
   </select>
 
-  <button onclick="calcularPontuacao()">Calcular Pontuação</button>
+  <div id="resultado" style="margin-top: 20px;"></div>
 
-  <div id="resultado"></div>
+  <div id="ranking" style="margin-top: 40px;">
+    <h2>Ranking da Rodada</h2>
+    <p id="dataAtualLabel"></p>
+    <table id="rankingTabelaDia">
+      <thead><tr><th>Jogador</th><th>Pontos</th></tr></thead>
+      <tbody></tbody>
+    </table>
 
-  
-<div id="ranking">
-  <h2>Ranking da Rodada</h2>
-  <p id="dataAtualLabel"></p>
-  <table id="rankingTabelaDia">
-    <thead>
-      <tr><th>Jogador</th><th>Pontos</th></tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-
-  <h2 style="margin-top:30px;">Ranking da Semana</h2>
-  <p id="semanaAtual"></p>
-  <table id="rankingTabelaSemana">
-    <thead>
-      <tr><th>Jogador</th><th>Pontos</th></tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-</div>
-
+    <h2 style="margin-top:30px;">Ranking da Semana</h2>
+    <p id="semanaAtual"></p>
+    <table id="rankingTabelaSemana">
+      <thead><tr><th>Jogador</th><th>Pontos</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
 
   <div id="modalRegras" style="display:none; position:fixed; top:10%; left:50%; transform:translateX(-50%);
     background:white; border:1px solid #ccc; padding:20px; max-width:500px; box-shadow:0 0 10px rgba(0,0,0,0.2); z-index:100;">
@@ -105,22 +98,17 @@ function getSemanaISO(dataStr) {
 
 function carregarDadosReais() {
   const dados = localStorage.getItem("dadosReais-" + dataAposta);
-  if (!dados) {
-    alert("Dados oficiais ainda não foram inseridos para esta data.");
-    return;
-  }
+  if (!dados) return;
   const info = JSON.parse(dados);
   document.getElementById('tempMinReal').value = info.tempMin;
   document.getElementById('tempMaxReal').value = info.tempMax;
   document.getElementById('condicaoReal').value = info.condicao;
+  calcularPontuacao();
 }
 
 function calcularPontuacao() {
   const nome = document.getElementById('nomeJogador').value.trim();
-  if (!nome) {
-    alert("Digite o nome do jogador.");
-    return;
-  }
+  if (!nome) return;
 
   const tempMinPrev = parseFloat(document.getElementById('tempMinPrevista').value);
   const tempMaxPrev = parseFloat(document.getElementById('tempMaxPrevista').value);
@@ -129,6 +117,8 @@ function calcularPontuacao() {
   const tempMinReal = parseFloat(document.getElementById('tempMinReal').value);
   const tempMaxReal = parseFloat(document.getElementById('tempMaxReal').value);
   const condReal = document.getElementById('condicaoReal').value;
+
+  if (isNaN(tempMinReal) || isNaN(tempMaxReal)) return;
 
   function pontosTemperatura(prevista, real) {
     const diff = Math.abs(prevista - real);
@@ -194,7 +184,7 @@ function exibirRanking() {
   tabelaSemana.innerHTML = "";
   tabelaDia.innerHTML = "";
 
-  for (const [tabela, dados] of [[tabelaSemana, dadosSemana], [tabelaDia, dadosDia]]) {
+  for (const [tabela, dados] of [[tabelaDia, dadosDia], [tabelaSemana, dadosSemana]]) {
     const entries = Object.entries(dados).sort((a, b) => b[1] - a[1]);
     for (const [jogador, pontos] of entries) {
       const tr = document.createElement("tr");
