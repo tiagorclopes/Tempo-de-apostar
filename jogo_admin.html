@@ -12,7 +12,7 @@
   <label>Nome do jogador</label>
   <input type="text" id="nomeJogador">
 
-  <p><strong>Previsão para:</strong> Semana Semana 12 a 18 de maio de 2025</p><input type="hidden" id="dataAposta" value="2025-05-12">
+  <p><strong>Previsão para:</strong> 11/05/2025</p><input type="hidden" id="dataAposta" value="2025-05-12">
 
   <label>Temperatura mínima prevista (°C)</label>
   <input type="number" id="tempMinPrevista">
@@ -172,7 +172,7 @@ function exibirRanking() {
   const semana = getSemanaISO(dataAposta);
   const dia = dataAposta;
   document.getElementById('semanaAtual').textContent = `Semana 12 a 18 de maio de 2025`;
-  document.getElementById('dataAtualLabel').textContent = `Data: ${dia.split('-').reverse().join('/')}`;
+  document.getElementById('dataAtualLabel').textContent = "Data: 11/05/2025";
 
   const dadosSemana = ranking[semana] || {};
   const dadosDia = ranking[dia] || {};
