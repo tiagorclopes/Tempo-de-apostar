@@ -8,29 +8,13 @@
 </head>
 <body>
   <h1>Tempo de Apostar</h1>
-  
-<!-- Botão -->
-<button onclick="document.getElementById('modalRegras').style.display='block'" style="margin-top: 10px;">Regras</button>
-
-<!-- Modal -->
-<div id="modalRegras" style="display:none; position:fixed; top:10%; left:50%; transform:translateX(-50%);
-background:white; border:1px solid #ccc; padding:20px; max-width:500px; box-shadow:0 0 10px rgba(0,0,0,0.2); z-index:100;">
-  <h2>Regras do Jogo</h2>
-  <ul>
-    <li>As apostas devem ser feitas até <strong>23h59 do dia anterior</strong> à data escolhida.</li>
-    <li>As informações meteorológicas oficiais são coletadas do site do INMET.</li>
-    <li>Os resultados aparecem a partir de <strong>00h01 do dia seguinte</strong>.</li>
-    <li>O ranking é semanal e atualizado automaticamente.</li>
-  </ul>
-  <button onclick="document.getElementById('modalRegras').style.display='none'">Fechar</button>
-</div>
-
 
   <label>Nome do jogador</label>
   <input type="text" id="nomeJogador">
 
   <label>Data da aposta</label>
-  <input type="date" id="dataAposta">
+  <input type="text" id="dataApostaExibida" value="12/05/2025" readonly>
+  <input type="hidden" id="dataAposta" value="2025-05-12">
 
   <label>Temperatura mínima prevista (°C)</label>
   <input type="number" id="tempMinPrevista">
@@ -67,22 +51,50 @@ background:white; border:1px solid #ccc; padding:20px; max-width:500px; box-shad
   </select>
 
   <button onclick="calcularPontuacao()">Calcular Pontuação</button>
-  <button onclick="resetarRanking()">Resetar Ranking</button>
 
   <div id="resultado"></div>
 
-  <div id="ranking">
-    <h2>Ranking da Semana Atual</h2>
-    <p id="semanaAtual"></p>
-    <table id="rankingTabela">
-      <thead>
-        <tr><th>Jogador</th><th>Pontos</th></tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+  
+<div id="ranking">
+  <h2>Ranking da Rodada</h2>
+  <p id="dataAtualLabel"></p>
+  <table id="rankingTabelaDia">
+    <thead>
+      <tr><th>Jogador</th><th>Pontos</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <h2 style="margin-top:30px;">Ranking da Semana</h2>
+  <p id="semanaAtual"></p>
+  <table id="rankingTabelaSemana">
+    <thead>
+      <tr><th>Jogador</th><th>Pontos</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+
+  <div id="modalRegras" style="display:none; position:fixed; top:10%; left:50%; transform:translateX(-50%);
+    background:white; border:1px solid #ccc; padding:20px; max-width:500px; box-shadow:0 0 10px rgba(0,0,0,0.2); z-index:100;">
+    <h2>Regras do Jogo</h2>
+    <ul>
+      <li>As apostas devem ser feitas até <strong>23h59 do dia anterior</strong> à data escolhida.</li>
+      <li>As informações meteorológicas oficiais são coletadas do site do INMET.</li>
+      <li>Os resultados aparecem a partir de <strong>00h01 do dia seguinte</strong>.</li>
+      <li>O ranking é semanal e atualizado automaticamente.</li>
+    </ul>
+    <button onclick="document.getElementById('modalRegras').style.display='none'">Fechar</button>
+  </div>
+
+  <div style="text-align:center; margin-top: 40px;">
+    <button onclick="document.getElementById('modalRegras').style.display='block'">Regras</button>
   </div>
 
 <script>
+const dataAposta = document.getElementById('dataAposta').value;
+
 function getSemanaISO(dataStr) {
   const date = new Date(dataStr);
   const ano = date.getFullYear();
@@ -92,28 +104,21 @@ function getSemanaISO(dataStr) {
 }
 
 function carregarDadosReais() {
-  const data = document.getElementById('dataAposta').value;
-  if (!data) return;
-
-  const dados = localStorage.getItem("dadosReais-" + data);
+  const dados = localStorage.getItem("dadosReais-" + dataAposta);
   if (!dados) {
     alert("Dados oficiais ainda não foram inseridos para esta data.");
     return;
   }
-
   const info = JSON.parse(dados);
   document.getElementById('tempMinReal').value = info.tempMin;
   document.getElementById('tempMaxReal').value = info.tempMax;
   document.getElementById('condicaoReal').value = info.condicao;
 }
 
-document.getElementById('dataAposta').addEventListener('change', carregarDadosReais);
-
 function calcularPontuacao() {
   const nome = document.getElementById('nomeJogador').value.trim();
-  const data = document.getElementById('dataAposta').value;
-  if (!nome || !data) {
-    alert("Digite o nome e selecione a data da aposta.");
+  if (!nome) {
+    alert("Digite o nome do jogador.");
     return;
   }
 
@@ -152,69 +157,57 @@ function calcularPontuacao() {
   const pontosCond = pontosCondicao(condPrev, condReal);
   const total = pontosMin + pontosMax + pontosCond;
 
-  const semana = getSemanaISO(data);
-  document.getElementById('semanaAtual').textContent = `Semana: ${semana}`;
-
+  const semana = getSemanaISO(dataAposta);
   const ranking = JSON.parse(localStorage.getItem('rankingTempo')) || {};
+
   ranking[semana] = ranking[semana] || {};
   ranking[semana][nome] = (ranking[semana][nome] || 0) + total;
+
+  ranking[dataAposta] = ranking[dataAposta] || {};
+  ranking[dataAposta][nome] = (ranking[dataAposta][nome] || 0) + total;
+
   localStorage.setItem('rankingTempo', JSON.stringify(ranking));
 
   document.getElementById('resultado').innerHTML =
-    `<strong>${nome} (${data}) fez:</strong><br>
-     Temp. mínima: ${pontosMin} pontos<br>
-     Temp. máxima: ${pontosMax} pontos<br>
-     Condição: ${pontosCond} pontos<br><br>
-     <strong>Total:</strong> ${total} pontos`;
+    `<strong>\${nome} (\${dataAposta}) fez:</strong><br>
+     Temp. mínima: \${pontosMin} pontos<br>
+     Temp. máxima: \${pontosMax} pontos<br>
+     Condição: \${pontosCond} pontos<br><br>
+     <strong>Total:</strong> \${total} pontos`;
 
   exibirRanking();
 }
 
 function exibirRanking() {
-  const hoje = new Date().toISOString().split('T')[0];
-  const semana = getSemanaISO(hoje);
-  document.getElementById('semanaAtual').textContent = `Semana: ${semana}`;
   const ranking = JSON.parse(localStorage.getItem('rankingTempo')) || {};
-  const dados = ranking[semana] || {};
 
-  const tbody = document.querySelector("#rankingTabela tbody");
-  tbody.innerHTML = "";
+  const semana = getSemanaISO(dataAposta);
+  const dia = dataAposta;
+  document.getElementById('semanaAtual').textContent = `Semana: ${semana}`;
+  document.getElementById('dataAtualLabel').textContent = `Data: ${dia.split('-').reverse().join('/')}`;
 
-  const entries = Object.entries(dados).sort((a, b) => b[1] - a[1]);
-  for (const [jogador, pontos] of entries) {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${jogador}</td><td>${pontos}</td>`;
-    tbody.appendChild(tr);
+  const dadosSemana = ranking[semana] || {};
+  const dadosDia = ranking[dia] || {};
+
+  const tabelaSemana = document.querySelector("#rankingTabelaSemana tbody");
+  const tabelaDia = document.querySelector("#rankingTabelaDia tbody");
+  tabelaSemana.innerHTML = "";
+  tabelaDia.innerHTML = "";
+
+  for (const [tabela, dados] of [[tabelaSemana, dadosSemana], [tabelaDia, dadosDia]]) {
+    const entries = Object.entries(dados).sort((a, b) => b[1] - a[1]);
+    for (const [jogador, pontos] of entries) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>\${jogador}</td><td>\${pontos}</td>`;
+      tabela.appendChild(tr);
+    }
   }
 }
 
-function resetarRanking() {
-  if (confirm("Tem certeza que deseja resetar o ranking?")) {
-    localStorage.removeItem('rankingTempo');
-    exibirRanking();
-  }
-}
-
-window.onload = exibirRanking;
+window.onload = () => {
+  carregarDadosReais();
+  exibirRanking();
+};
 </script>
-
-<!-- Modal -->
-<div id="modalRegras" style="display:none; position:fixed; top:10%; left:50%; transform:translateX(-50%);
-background:white; border:1px solid #ccc; padding:20px; max-width:500px; box-shadow:0 0 10px rgba(0,0,0,0.2); z-index:100;">
-  <h2>Regras do Jogo</h2>
-  <ul>
-    <li>As apostas devem ser feitas até <strong>23h59 do dia anterior</strong> à data escolhida.</li>
-    <li>As informações meteorológicas oficiais são coletadas do site do INMET.</li>
-    <li>Os resultados aparecem a partir de <strong>00h01 do dia seguinte</strong>.</li>
-    <li>O ranking é semanal e atualizado automaticamente.</li>
-  </ul>
-  <button onclick="document.getElementById('modalRegras').style.display='none'">Fechar</button>
-</div>
-
-<!-- Botão ao final da página -->
-<div style="text-align:center; margin-top: 40px;">
-  <button onclick="document.getElementById('modalRegras').style.display='block'">Consultar regras</button>
-</div>
-
 </body>
 </html>
