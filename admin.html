@@ -9,8 +9,8 @@
 <body>
   <h1>Inserir Dados Reais</h1>
 
-  <label>Data da aposta</label>
-  <input type="date" id="dataAdmin">
+  <p><strong>Previsão para:</strong> 11/05/2025</p>
+  <input type="date" id="dataAdmin" value="2025-05-11">
 
   <label>Temperatura mínima real (°C)</label>
   <input type="number" id="tempMinReal">
@@ -29,8 +29,15 @@
   </select>
 
   <button onclick="salvarDadosReais()">Salvar dados do dia</button>
-
   <p id="status"></p>
+
+  <hr>
+  <h2>Gerenciamento</h2>
+  <button onclick="resetarRanking()" style="background:#c62828; color:white; padding:10px 20px; border:none; border-radius:5px;">Resetar Tudo</button>
+
+  <hr>
+  <h2>Rankings das Semanas Anteriores</h2>
+  <div id="dashboardRankings"></div>
 
   <script>
     function salvarDadosReais() {
@@ -53,6 +60,44 @@
       localStorage.setItem("dadosReais-" + data, JSON.stringify(dados));
       document.getElementById('status').textContent = "Dados salvos para " + data;
     }
+
+    function resetarRanking() {
+      if (confirm("Tem certeza que deseja apagar todos os dados e rankings?")) {
+        localStorage.clear();
+        alert("Todos os dados foram apagados.");
+        location.reload();
+      }
+    }
+
+    function exibirDashboard() {
+      const dados = JSON.parse(localStorage.getItem('rankingTempo')) || {};
+      const container = document.getElementById('dashboardRankings');
+      const chaves = Object.keys(dados).filter(k => k.includes("W"));  // semanas
+      if (chaves.length === 0) {
+        container.innerHTML = "<p>Nenhum ranking semanal encontrado.</p>";
+        return;
+      }
+
+      chaves.sort().reverse();
+      for (const semana of chaves) {
+        const bloco = document.createElement("div");
+        bloco.style.marginBottom = "20px";
+        bloco.innerHTML = `<h3>Semana ${semana}</h3>`;
+        const tabela = document.createElement("table");
+        tabela.innerHTML = "<thead><tr><th>Jogador</th><th>Pontos</th></tr></thead><tbody></tbody>";
+        const corpo = tabela.querySelector("tbody");
+        const pares = Object.entries(dados[semana]).sort((a, b) => b[1] - a[1]);
+        for (const [jogador, pontos] of pares) {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `<td>${jogador}</td><td>${pontos}</td>`;
+          corpo.appendChild(tr);
+        }
+        bloco.appendChild(tabela);
+        container.appendChild(bloco);
+      }
+    }
+
+    window.onload = exibirDashboard;
   </script>
 </body>
 </html>
