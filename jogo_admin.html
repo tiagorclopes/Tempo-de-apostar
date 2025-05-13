@@ -12,7 +12,8 @@
   <label>Nome do jogador</label>
   <input type="text" id="nomeJogador">
 
-  <p><strong>Previsão para: 12/05/2025</strong></p><input type="hidden" id="dataAposta" value="2025-05-12">
+  <p><strong>Previsão para: 14/05/2025</strong></p>
+  <input type="hidden" id="dataAposta" value="2025-05-14">
 
   <label>Temperatura mínima prevista (°C)</label>
   <input type="number" id="tempMinPrevista">
@@ -29,6 +30,8 @@
     <option>Chuva forte</option>
     <option>Tempestade</option>
   </select>
+
+  <button onclick="calcularPontuacao()" style="margin-top:20px;">Registrar aposta</button>
 
   <hr>
   <h2>Resultados</h2>
@@ -53,7 +56,7 @@
 
   <div id="ranking" style="margin-top: 40px;">
     <h2>Ranking da Rodada</h2>
-    <p id="dataAtualLabel"></p>
+    <p id="dataAtualLabel">Data: 14/05/2025</p>
     <table id="rankingTabelaDia">
       <thead><tr><th>Jogador</th><th>Pontos</th></tr></thead>
       <tbody></tbody>
@@ -67,135 +70,118 @@
     </table>
   </div>
 
-  <div id="modalRegras" style="display:none; position:fixed; top:10%; left:50%; transform:translateX(-50%);
-    background:white; border:1px solid #ccc; padding:20px; max-width:500px; box-shadow:0 0 10px rgba(0,0,0,0.2); z-index:100;">
-    <h2>Regras do Jogo</h2>
-    <ul>
-      <li>As apostas devem ser feitas até <strong>23h59 do dia anterior</strong> à data escolhida.</li>
-      <li>As informações meteorológicas oficiais são coletadas do site do INMET.</li>
-      <li>Os resultados aparecem a partir de <strong>00h01 do dia seguinte</strong>.</li>
-      <li>O ranking é semanal e atualizado automaticamente.</li>
-    </ul>
-    <button onclick="document.getElementById('modalRegras').style.display='none'">Fechar</button>
-  </div>
-
-  <div style="text-align:center; margin-top: 40px;">
-    <button onclick="document.getElementById('modalRegras').style.display='block'">Regras</button>
-  </div>
-
 <script>
-const dataAposta = document.getElementById('dataAposta').value;
+  const dataAposta = document.getElementById('dataAposta').value;
 
-function getSemanaISO(dataStr) {
-  const date = new Date(dataStr);
-  const ano = date.getFullYear();
-  const primeiraQuinta = new Date(date.setDate(date.getDate() + 3 - (date.getDay() + 6) % 7));
-  const semana = Math.ceil((((primeiraQuinta - new Date(ano, 0, 1)) / 86400000) + 1) / 7);
-  return `${ano}-W${String(semana).padStart(2, '0')}`;
-}
-
-function carregarDadosReais() {
-  const dados = localStorage.getItem("dadosReais-" + dataAposta);
-  if (!dados) return;
-  const info = JSON.parse(dados);
-  document.getElementById('tempMinReal').value = info.tempMin;
-  document.getElementById('tempMaxReal').value = info.tempMax;
-  document.getElementById('condicaoReal').value = info.condicao;
-  calcularPontuacao();
-}
-
-function calcularPontuacao() {
-  const nome = document.getElementById('nomeJogador').value.trim();
-  if (!nome) return;
-
-  const tempMinPrev = parseFloat(document.getElementById('tempMinPrevista').value);
-  const tempMaxPrev = parseFloat(document.getElementById('tempMaxPrevista').value);
-  const condPrev = document.getElementById('condicaoPrevista').value;
-
-  const tempMinReal = parseFloat(document.getElementById('tempMinReal').value);
-  const tempMaxReal = parseFloat(document.getElementById('tempMaxReal').value);
-  const condReal = document.getElementById('condicaoReal').value;
-
-  if (isNaN(tempMinReal) || isNaN(tempMaxReal)) return;
-
-  function pontosTemperatura(prevista, real) {
-    const diff = Math.abs(prevista - real);
-    if (diff === 0) return 10;
-    if (diff <= 1) return 7;
-    if (diff <= 2) return 4;
-    if (diff <= 3) return 2;
-    return 0;
+  function getSemanaISO(dataStr) {
+    const date = new Date(dataStr);
+    const ano = date.getFullYear();
+    const primeiraQuinta = new Date(date.setDate(date.getDate() + 3 - (date.getDay() + 6) % 7));
+    const semana = Math.ceil((((primeiraQuinta - new Date(ano, 0, 1)) / 86400000) + 1) / 7);
+    return `${ano}-W${String(semana).padStart(2, '0')}`;
   }
 
-  function pontosCondicao(prev, real) {
-    if (prev === real) return 8;
-    const vizinhas = {
-      "Ensolarado": ["Parcialmente nublado"],
-      "Parcialmente nublado": ["Ensolarado", "Nublado"],
-      "Nublado": ["Parcialmente nublado", "Chuva leve"],
-      "Chuva leve": ["Nublado", "Chuva forte"],
-      "Chuva forte": ["Chuva leve", "Tempestade"],
-      "Tempestade": ["Chuva forte"]
-    };
-    return vizinhas[prev]?.includes(real) ? 4 : 0;
+  function carregarDadosReais() {
+    const dados = localStorage.getItem("dadosReais-" + dataAposta);
+    if (!dados) return;
+    const info = JSON.parse(dados);
+    document.getElementById('tempMinReal').value = info.tempMin;
+    document.getElementById('tempMaxReal').value = info.tempMax;
+    document.getElementById('condicaoReal').value = info.condicao;
   }
 
-  const pontosMin = pontosTemperatura(tempMinPrev, tempMinReal);
-  const pontosMax = pontosTemperatura(tempMaxPrev, tempMaxReal);
-  const pontosCond = pontosCondicao(condPrev, condReal);
-  const total = pontosMin + pontosMax + pontosCond;
+  function calcularPontuacao() {
+    const nome = document.getElementById('nomeJogador').value.trim();
+    if (!nome) return;
 
-  const semana = getSemanaISO(dataAposta);
-  const ranking = JSON.parse(localStorage.getItem('rankingTempo')) || {};
+    const tempMinPrev = parseFloat(document.getElementById('tempMinPrevista').value);
+    const tempMaxPrev = parseFloat(document.getElementById('tempMaxPrevista').value);
+    const condPrev = document.getElementById('condicaoPrevista').value;
 
-  ranking[semana] = ranking[semana] || {};
-  ranking[semana][nome] = (ranking[semana][nome] || 0) + total;
+    const tempMinReal = parseFloat(document.getElementById('tempMinReal').value);
+    const tempMaxReal = parseFloat(document.getElementById('tempMaxReal').value);
+    const condReal = document.getElementById('condicaoReal').value;
 
-  ranking[dataAposta] = ranking[dataAposta] || {};
-  ranking[dataAposta][nome] = (ranking[dataAposta][nome] || 0) + total;
+    if (isNaN(tempMinReal) || isNaN(tempMaxReal)) return;
 
-  localStorage.setItem('rankingTempo', JSON.stringify(ranking));
+    function pontosTemperatura(prevista, real) {
+      const diff = Math.abs(prevista - real);
+      if (diff === 0) return 10;
+      if (diff <= 1) return 7;
+      if (diff <= 2) return 4;
+      if (diff <= 3) return 2;
+      return 0;
+    }
 
-  document.getElementById('resultado').innerHTML =
-    `<strong>\${nome} (\${dataAposta}) fez:</strong><br>
-     Temp. mínima: \${pontosMin} pontos<br>
-     Temp. máxima: \${pontosMax} pontos<br>
-     Condição: \${pontosCond} pontos<br><br>
-     <strong>Total:</strong> \${total} pontos`;
+    function pontosCondicao(prev, real) {
+      if (prev === real) return 8;
+      const vizinhas = {
+        "Ensolarado": ["Parcialmente nublado"],
+        "Parcialmente nublado": ["Ensolarado", "Nublado"],
+        "Nublado": ["Parcialmente nublado", "Chuva leve"],
+        "Chuva leve": ["Nublado", "Chuva forte"],
+        "Chuva forte": ["Chuva leve", "Tempestade"],
+        "Tempestade": ["Chuva forte"]
+      };
+      return vizinhas[prev]?.includes(real) ? 4 : 0;
+    }
 
-  exibirRanking();
-}
+    const pontosMin = pontosTemperatura(tempMinPrev, tempMinReal);
+    const pontosMax = pontosTemperatura(tempMaxPrev, tempMaxReal);
+    const pontosCond = pontosCondicao(condPrev, condReal);
+    const total = pontosMin + pontosMax + pontosCond;
 
-function exibirRanking() {
-  const ranking = JSON.parse(localStorage.getItem('rankingTempo')) || {};
+    const semana = getSemanaISO(dataAposta);
+    const ranking = JSON.parse(localStorage.getItem('rankingTempo')) || {};
 
-  const semana = getSemanaISO(dataAposta);
-  const dia = dataAposta;
-  document.getElementById('semanaAtual').textContent = `Semana 12 a 18 de maio de 2025`;
-  document.getElementById('dataAtualLabel').textContent = "Data: 12/05/2025";
+    ranking[semana] = ranking[semana] || {};
+    ranking[semana][nome] = (ranking[semana][nome] || 0) + total;
 
-  const dadosSemana = ranking[semana] || {};
-  const dadosDia = ranking[dia] || {};
+    ranking[dataAposta] = ranking[dataAposta] || {};
+    ranking[dataAposta][nome] = (ranking[dataAposta][nome] || 0) + total;
 
-  const tabelaSemana = document.querySelector("#rankingTabelaSemana tbody");
-  const tabelaDia = document.querySelector("#rankingTabelaDia tbody");
-  tabelaSemana.innerHTML = "";
-  tabelaDia.innerHTML = "";
+    localStorage.setItem('rankingTempo', JSON.stringify(ranking));
 
-  for (const [tabela, dados] of [[tabelaDia, dadosDia], [tabelaSemana, dadosSemana]]) {
-    const entries = Object.entries(dados).sort((a, b) => b[1] - a[1]);
-    for (const [jogador, pontos] of entries) {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `<td>\${jogador}</td><td>\${pontos}</td>`;
-      tabela.appendChild(tr);
+    document.getElementById('resultado').innerHTML =
+      `<strong>\${nome} (\${dataAposta}) fez:</strong><br>
+       Temp. mínima: \${pontosMin} pontos<br>
+       Temp. máxima: \${pontosMax} pontos<br>
+       Condição: \${pontosCond} pontos<br><br>
+       <strong>Total:</strong> \${total} pontos`;
+
+    exibirRanking();
+  }
+
+  function exibirRanking() {
+    const ranking = JSON.parse(localStorage.getItem('rankingTempo')) || {};
+
+    const semana = getSemanaISO(dataAposta);
+    const dia = dataAposta;
+    document.getElementById('dataAtualLabel').textContent = "Data: " + dia.split("-").reverse().join("/");
+    document.getElementById('semanaAtual').textContent = "Semana 12 a 18/05/2025";
+
+    const dadosSemana = ranking[semana] || {};
+    const dadosDia = ranking[dia] || {};
+
+    const tabelaSemana = document.querySelector("#rankingTabelaSemana tbody");
+    const tabelaDia = document.querySelector("#rankingTabelaDia tbody");
+    tabelaSemana.innerHTML = "";
+    tabelaDia.innerHTML = "";
+
+    for (const [tabela, dados] of [[tabelaDia, dadosDia], [tabelaSemana, dadosSemana]]) {
+      const entries = Object.entries(dados).sort((a, b) => b[1] - a[1]);
+      for (const [jogador, pontos] of entries) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>\${jogador}</td><td>\${pontos}</td>`;
+        tabela.appendChild(tr);
+      }
     }
   }
-}
 
-window.onload = () => {
-  carregarDadosReais();
-  exibirRanking();
-};
+  window.onload = () => {
+    carregarDadosReais();
+    exibirRanking();
+  };
 </script>
 </body>
 </html>
